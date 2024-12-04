@@ -6,9 +6,9 @@
 
 # ManipulatorField
 
-Field based dimension reduction as a general solution to singularities
+Field based dimension reduction as a general solution to singularities  
 
 
 ## Reference
-https://github.com/peterropac/Aegolius
-https://www.mathworks.com/matlabcentral/fileexchange/73617-robot-arm-potential-field-navigation
+https://github.com/peterropac/Aegolius  
+https://www.mathworks.com/matlabcentral/fileexchange/73617-robot-arm-potential-field-navigation  
