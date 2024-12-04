@@ -1,0 +1,8 @@
+jupyterlab
+ipympl
+glob2
+idx2numpy
+ffmpeg
+jax
+bcrypt
+roboticstoolbox-python
