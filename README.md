@@ -8,7 +8,9 @@
 
 Field based dimension reduction as a general solution to singularities  
 
-Notebooks folder contains technological examples, scripts/main.py is the script
+Notebooks folder contains technological examples  
+
+Run scripts/main.py to see a simple example of a potential field  
 
 
 ## Reference  

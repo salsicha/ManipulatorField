@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # Arm parameters
 L = np.array([2.0, 1.5])  # lengths of links
@@ -13,6 +14,8 @@ goal_pos = np.array([0, 3.5])  # end-effector position at goal
 
 # Initial joint angles
 theta = np.array([0.0, 0.0])
+
+end_effector = np.array([0.0, 0.0])
 
 # Obstacle parameters
 obstacles = [
@@ -53,11 +56,28 @@ def jacobian(theta):
             J[:, i] += [-L[j]*np.sin(s), L[j]*np.cos(s)]
     return J
 
+# Plots
+plots = []
+
 # Simulation loop
 trajectory = []
-for iteration in range(200):
+
+# for iteration in range(200):
+def update(iteration):
+    global theta
+    global trajectory
+    global goal_pos
+    global repulsion_gain
+    global repulsion_range
+    global attraction_gain
+    global obstacles
+    global plots
+    global end_effector
+    global end_eff
+
     joint_positions = forward_kinematics(theta)
     end_effector = joint_positions[-1]
+    print(f"end_effector: {end_effector}")
 
     # Attractive force
     f_att = compute_attractive_force(end_effector, goal_pos)
@@ -75,21 +95,51 @@ for iteration in range(200):
     theta += step_size * dtheta
     trajectory.append(end_effector.copy())
 
-# Plotting
+    traj = np.array(trajectory)
+    end_eff[0].set_xdata(traj[:, 0])
+    end_eff[0].set_ydata(traj[:, 1])
+    for i in range(len(joint_positions) - 1):
+        plots[i][0].set_xdata([joint_positions[i][0], joint_positions[i+1][0]])
+        plots[i][0].set_ydata([joint_positions[i][1], joint_positions[i+1][1]])
+
 fig, ax = plt.subplots()
 for obs in obstacles:
     circle = plt.Circle(obs['center'], obs['radius'], color='r', alpha=0.5)
     ax.add_patch(circle)
-
-traj = np.array(trajectory)
-ax.plot(traj[:, 0], traj[:, 1], 'b--', label='End-Effector Path')
-final_positions = forward_kinematics(theta)
-for i in range(len(final_positions) - 1):
-    ax.plot([final_positions[i][0], final_positions[i+1][0]],
-            [final_positions[i][1], final_positions[i+1][1]], 'ko-')
 ax.plot(goal_pos[0], goal_pos[1], 'go', label='Goal')
+
+# Initialize plots
+joint_positions = forward_kinematics(theta)
+end_eff = ax.plot(end_effector[0], end_effector[0], 'b--', label='End-Effector Path')
+for i in range(len(joint_positions) - 1):
+    j_plt = ax.plot([joint_positions[i][0], joint_positions[i+1][0]],
+                    [joint_positions[i][1], joint_positions[i+1][1]], 'ko-')
+    plots.append(j_plt)    
+    print(f"j_plt: {j_plt}")
+
 ax.set_aspect('equal')
 ax.legend()
 plt.title('Potential Field Motion Planning')
 plt.grid(True)
+
+ani = animation.FuncAnimation(fig=fig, func=update, frames=200, interval=30)
 plt.show()
+
+# # Plotting
+# fig, ax = plt.subplots()
+# for obs in obstacles:
+#     circle = plt.Circle(obs['center'], obs['radius'], color='r', alpha=0.5)
+#     ax.add_patch(circle)
+
+# traj = np.array(trajectory)
+# ax.plot(traj[:, 0], traj[:, 1], 'b--', label='End-Effector Path')
+# final_positions = forward_kinematics(theta)
+# for i in range(len(final_positions) - 1):
+#     ax.plot([final_positions[i][0], final_positions[i+1][0]],
+#             [final_positions[i][1], final_positions[i+1][1]], 'ko-')
+# ax.plot(goal_pos[0], goal_pos[1], 'go', label='Goal')
+# ax.set_aspect('equal')
+# ax.legend()
+# plt.title('Potential Field Motion Planning')
+# plt.grid(True)
+# plt.show()
