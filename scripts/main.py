@@ -133,3 +133,45 @@ plt.grid(True)
 
 ani = animation.FuncAnimation(fig=fig, func=update, frames=200, interval=30)
 plt.show()
+
+
+
+"""
+
+def forward_kinematics(theta1, theta2, l1, l2):
+    # Calculates the end-effector position given joint angles.
+    x = l1 * jnp.cos(theta1) + l2 * jnp.cos(theta1 + theta2)
+    y = l1 * jnp.sin(theta1) + l2 * jnp.sin(theta1 + theta2)
+    return jnp.array([x, y])
+
+def inverse_kinematics(target_x, target_y, l1, l2, initial_guess):
+    # Calculates the joint angles given the end-effector target position.
+    def loss_fn(thetas):
+        x, y = forward_kinematics(thetas[0], thetas[1], l1, l2)
+        return (x - target_x)**2 + (y - target_y)**2
+    
+    thetas = initial_guess
+    learning_rate = 0.01
+    for _ in range(1000):
+      loss, grads = jax.value_and_grad(loss_fn)(thetas)
+      thetas = thetas - learning_rate * grads
+    return thetas
+
+# Define arm lengths and target position
+l1, l2 = 1.0, 1.0
+target_x, target_y = 1.5, 0.5
+
+# Initial guess for joint angles
+initial_guess = jnp.array([0.0, 0.0])
+
+# Calculate inverse kinematics
+thetas = inverse_kinematics(target_x, target_y, l1, l2, initial_guess)
+
+# Print results
+print("Joint angles (radians):", thetas)
+
+# Verify the solution
+x, y = forward_kinematics(thetas[0], thetas[1], l1, l2)
+print("End-effector position:", x, y)
+
+"""
