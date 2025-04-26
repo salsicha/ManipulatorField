@@ -3,57 +3,67 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+import jax.numpy as jnp
+from jax import jit
+import jax
+
 # Arm parameters
-L = np.array([2.0, 1.5])  # lengths of links
+L = jnp.array([2.0, 1.5])  # lengths of links
 n = len(L)
 step_size = 0.01
 
 # Goal configuration
-theta_goal = np.array([np.pi / 2, -np.pi / 2])
-goal_pos = np.array([0, 3.5])  # end-effector position at goal
+theta_goal = jnp.array([np.pi / 2, -np.pi / 2])
+goal_pos = jnp.array([0, 3.5])  # end-effector position at goal
 
 # Initial joint angles
-theta = np.array([0.0, 0.0])
+theta = jnp.array([0.0, 0.0])
 
-end_effector = np.array([0.0, 0.0])
+end_effector = jnp.array([0.0, 0.0])
 
 # Obstacle parameters
 obstacles = [
-    {'center': np.array([1.5, 1.5]), 'radius': 0.5},
-    {'center': np.array([0.5, 2.5]), 'radius': 0.3}
+    {'center': jnp.array([1.5, 1.5]), 'radius': 0.5},
+    {'center': jnp.array([0.5, 2.5]), 'radius': 0.3}
 ]
 repulsion_gain = 0.01
 repulsion_range = 0.5
 attraction_gain = 1.0
 
+@jax.jit
 def forward_kinematics(theta):
-    points = [np.array([0.0, 0.0])]
+    points = [jnp.array([0.0, 0.0])]
     for i in range(n):
-        angle = np.sum(theta[:i+1])
-        next_point = points[-1] + L[i] * np.array([np.cos(angle), np.sin(angle)])
+        angle = jnp.sum(theta[:i+1])
+        next_point = points[-1] + L[i] * jnp.array([jnp.cos(angle), jnp.sin(angle)])
         points.append(next_point)
     return points
 
+@jax.jit
 def compute_attractive_force(end_effector, goal):
     return -attraction_gain * (end_effector - goal)
 
+@jax.jit
 def compute_repulsive_force(point):
-    force = np.zeros(2)
+    force = jnp.zeros(2)
     for obs in obstacles:
         obs_vec = point - obs['center']
-        dist = np.linalg.norm(obs_vec)
-        if dist < repulsion_range:
-            force += repulsion_gain * (1.0 / dist - 1.0 / repulsion_range) / (dist ** 3) * obs_vec
+        dist = jnp.linalg.norm(obs_vec)
+        addition = jnp.where(dist < repulsion_range, repulsion_gain * (1.0 / dist - 1.0 / repulsion_range) / (dist ** 3) * obs_vec, 0)
+        force += addition
     return force
 
+@jax.jit
 def jacobian(theta):
-    J = np.zeros((2, n))
+    J = jnp.zeros((2, n))
     for i in range(n):
-        s = np.sum(theta[:i+1])
-        J[:, i] = [-L[i]*np.sin(s), L[i]*np.cos(s)]
+        s = jnp.sum(theta[:i+1])
+        # J[:, i] = [-L[i]*jnp.sin(s), L[i]*jnp.cos(s)]
+        J = J.at[:, i].set([-L[i]*jnp.sin(s), L[i]*jnp.cos(s)])
         for j in range(i):
             s -= theta[j]
-            J[:, i] += [-L[j]*np.sin(s), L[j]*np.cos(s)]
+            # J[:, i] += [-L[j]*jnp.sin(s), L[j]*jnp.cos(s)]
+            J += J.at[:, i].set([-L[j]*jnp.sin(s), L[j]*jnp.cos(s)])
     return J
 
 # Plots
@@ -76,6 +86,8 @@ def update(iteration):
     global end_eff
 
     joint_positions = forward_kinematics(theta)
+    # joint_positions = fk_jit(theta)
+    
     end_effector = joint_positions[-1]
     print(f"end_effector: {end_effector}")
 
@@ -90,7 +102,9 @@ def update(iteration):
     f_total = f_att + f_rep
 
     # Compute Jacobian and update theta
+    # J = jac_jit(theta)
     J = jacobian(theta)
+
     dtheta = np.linalg.pinv(J) @ f_total
     theta += step_size * dtheta
     trajectory.append(end_effector.copy())
@@ -109,7 +123,9 @@ for obs in obstacles:
 ax.plot(goal_pos[0], goal_pos[1], 'go', label='Goal')
 
 # Initialize plots
+# joint_positions = fk_jit(theta)
 joint_positions = forward_kinematics(theta)
+
 end_eff = ax.plot(end_effector[0], end_effector[0], 'b--', label='End-Effector Path')
 for i in range(len(joint_positions) - 1):
     j_plt = ax.plot([joint_positions[i][0], joint_positions[i+1][0]],
@@ -124,22 +140,3 @@ plt.grid(True)
 
 ani = animation.FuncAnimation(fig=fig, func=update, frames=200, interval=30)
 plt.show()
-
-# # Plotting
-# fig, ax = plt.subplots()
-# for obs in obstacles:
-#     circle = plt.Circle(obs['center'], obs['radius'], color='r', alpha=0.5)
-#     ax.add_patch(circle)
-
-# traj = np.array(trajectory)
-# ax.plot(traj[:, 0], traj[:, 1], 'b--', label='End-Effector Path')
-# final_positions = forward_kinematics(theta)
-# for i in range(len(final_positions) - 1):
-#     ax.plot([final_positions[i][0], final_positions[i+1][0]],
-#             [final_positions[i][1], final_positions[i+1][1]], 'ko-')
-# ax.plot(goal_pos[0], goal_pos[1], 'go', label='Goal')
-# ax.set_aspect('equal')
-# ax.legend()
-# plt.title('Potential Field Motion Planning')
-# plt.grid(True)
-# plt.show()
