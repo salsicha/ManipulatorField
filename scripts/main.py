@@ -77,10 +77,6 @@ def update(iteration):
     global theta
     global trajectory
     global goal_pos
-    global repulsion_gain
-    global repulsion_range
-    global attraction_gain
-    global obstacles
     global plots
     global end_effector
     global end_eff
