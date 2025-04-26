@@ -58,11 +58,11 @@ def jacobian(theta):
     J = jnp.zeros((2, n))
     for i in range(n):
         s = jnp.sum(theta[:i+1])
-        # J[:, i] = [-L[i]*jnp.sin(s), L[i]*jnp.cos(s)]
+        # J[:, i] = [-L[i]*np.sin(s), L[i]*np.cos(s)]
         J = J.at[:, i].set([-L[i]*jnp.sin(s), L[i]*jnp.cos(s)])
         for j in range(i):
             s -= theta[j]
-            # J[:, i] += [-L[j]*jnp.sin(s), L[j]*jnp.cos(s)]
+            # J[:, i] += [-L[j]*np.sin(s), L[j]*np.cos(s)]
             J += J.at[:, i].set([-L[j]*jnp.sin(s), L[j]*jnp.cos(s)])
     return J
 
@@ -86,7 +86,6 @@ def update(iteration):
     global end_eff
 
     joint_positions = forward_kinematics(theta)
-    # joint_positions = fk_jit(theta)
     
     end_effector = joint_positions[-1]
     print(f"end_effector: {end_effector}")
@@ -102,7 +101,6 @@ def update(iteration):
     f_total = f_att + f_rep
 
     # Compute Jacobian and update theta
-    # J = jac_jit(theta)
     J = jacobian(theta)
 
     dtheta = np.linalg.pinv(J) @ f_total
@@ -123,7 +121,6 @@ for obs in obstacles:
 ax.plot(goal_pos[0], goal_pos[1], 'go', label='Goal')
 
 # Initialize plots
-# joint_positions = fk_jit(theta)
 joint_positions = forward_kinematics(theta)
 
 end_eff = ax.plot(end_effector[0], end_effector[0], 'b--', label='End-Effector Path')
