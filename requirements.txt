@@ -6,3 +6,5 @@ ffmpeg
 jax
 bcrypt
 roboticstoolbox-python
+numpy
+matplotlib
